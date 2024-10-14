@@ -52,7 +52,8 @@ extern bool setDeviceSpecificMode(Mode type, bool enabled);
 
 Power::Power()
     : mInteractionHandler(nullptr),
-      mSustainedPerfModeOn(false) {
+      mSustainedPerfModeOn(false),
+      mLowPowerModeOn(false) {
     mInteractionHandler = std::make_unique<InteractionHandler>();
     mInteractionHandler->Init();
 
@@ -97,8 +98,16 @@ ndk::ScopedAStatus Power::setMode(Mode type, bool enabled) {
             }
             mSustainedPerfModeOn = true;
             break;
+        case Mode::LOW_POWER:
+            if (enabled) {
+                HintManager::GetInstance()->DoHint("LOW_POWER");
+            } else {
+                HintManager::GetInstance()->EndHint("LOW_POWER");
+            }
+            mLowPowerModeOn = enabled;
+            break;
         case Mode::LAUNCH:
-            if (mSustainedPerfModeOn) {
+            if (mSustainedPerfModeOn || mLowPowerModeOn) {
                 break;
             }
             [[fallthrough]];
@@ -119,6 +128,9 @@ ndk::ScopedAStatus Power::setMode(Mode type, bool enabled) {
         case Mode::GAME_LOADING:
             [[fallthrough]];
         default:
+            if (mLowPowerModeOn) {
+                break;
+            }
             if (enabled) {
                 HintManager::GetInstance()->DoHint(toString(type));
             } else {
@@ -169,7 +181,7 @@ ndk::ScopedAStatus Power::setBoost(Boost type, int32_t durationMs) {
     LOG(DEBUG) << "Power setBoost: " << toString(type) << " duration: " << durationMs;
     switch (type) {
         case Boost::INTERACTION:
-            if (mSustainedPerfModeOn) {
+            if (mSustainedPerfModeOn || mLowPowerModeOn) {
                 break;
             }
             mInteractionHandler->Acquire(durationMs);
@@ -181,7 +193,7 @@ ndk::ScopedAStatus Power::setBoost(Boost type, int32_t durationMs) {
         case Boost::AUDIO_LAUNCH:
             [[fallthrough]];
         default:
-            if (mSustainedPerfModeOn) {
+            if (mSustainedPerfModeOn || mLowPowerModeOn) {
                 break;
             }
             if (durationMs > 0) {
