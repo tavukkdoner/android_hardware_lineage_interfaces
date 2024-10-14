@@ -50,8 +50,7 @@ extern bool setDeviceSpecificMode(Mode type, bool enabled);
 
 Power::Power()
     : mInteractionHandler(nullptr),
-      mSustainedPerfModeOn(false),
-      mLowPowerModeOn(false) {
+      mSustainedPerfModeOn(false) {
     mInteractionHandler = std::make_unique<InteractionHandler>();
     mInteractionHandler->Init();
 
@@ -94,16 +93,8 @@ ndk::ScopedAStatus Power::setMode(Mode type, bool enabled) {
             }
             mSustainedPerfModeOn = true;
             break;
-        case Mode::LOW_POWER:
-            if (enabled) {
-                HintManager::GetInstance()->DoHint("LOW_POWER");
-            } else {
-                HintManager::GetInstance()->EndHint("LOW_POWER");
-            }
-            mLowPowerModeOn = enabled;
-            break;
         case Mode::LAUNCH:
-            if (mSustainedPerfModeOn || mLowPowerModeOn) {
+            if (mSustainedPerfModeOn) {
                 break;
             }
             [[fallthrough]];
@@ -124,9 +115,6 @@ ndk::ScopedAStatus Power::setMode(Mode type, bool enabled) {
         case Mode::GAME_LOADING:
             [[fallthrough]];
         default:
-            if (mLowPowerModeOn) {
-                break;
-            }
             if (enabled) {
                 HintManager::GetInstance()->DoHint(toString(type));
             } else {
@@ -157,7 +145,7 @@ ndk::ScopedAStatus Power::setBoost(Boost type, int32_t durationMs) {
     }
     switch (type) {
         case Boost::INTERACTION:
-            if (mSustainedPerfModeOn || mLowPowerModeOn) {
+            if (mSustainedPerfModeOn) {
                 break;
             }
             mInteractionHandler->Acquire(durationMs);
@@ -169,7 +157,7 @@ ndk::ScopedAStatus Power::setBoost(Boost type, int32_t durationMs) {
         case Boost::AUDIO_LAUNCH:
             [[fallthrough]];
         default:
-            if (mSustainedPerfModeOn || mLowPowerModeOn) {
+            if (mSustainedPerfModeOn) {
                 break;
             }
             if (durationMs > 0) {
