@@ -47,7 +47,6 @@ constexpr char kPowerHalRenderingProp[] = "vendor.powerhal.rendering";
 
 extern bool isDeviceSpecificModeSupported(Mode type, bool* _aidl_return);
 extern bool setDeviceSpecificMode(Mode type, bool enabled);
-bool isLowPowerEnabled = false;
 
 Power::Power()
     : mInteractionHandler(nullptr),
@@ -94,11 +93,8 @@ ndk::ScopedAStatus Power::setMode(Mode type, bool enabled) {
             }
             mSustainedPerfModeOn = true;
             break;
-        case Mode::LOW_POWER:
-            isLowPowerEnabled = enabled;
-            [[fallthrough]];
         case Mode::LAUNCH:
-            if (mSustainedPerfModeOn || isLowPowerEnabled) {
+            if (mSustainedPerfModeOn) {
                 break;
             }
             [[fallthrough]];
@@ -107,14 +103,8 @@ ndk::ScopedAStatus Power::setMode(Mode type, bool enabled) {
         case Mode::FIXED_PERFORMANCE:
             [[fallthrough]];
         case Mode::EXPENSIVE_RENDERING:
-            if (isLowPowerEnabled) {
-                break;
-            }
             [[fallthrough]];
         case Mode::INTERACTIVE:
-            if (isLowPowerEnabled) {
-                break;
-            }
             [[fallthrough]];
         case Mode::DEVICE_IDLE:
             [[fallthrough]];
@@ -123,9 +113,6 @@ ndk::ScopedAStatus Power::setMode(Mode type, bool enabled) {
         case Mode::AUDIO_STREAMING_LOW_LATENCY:
             [[fallthrough]];
         case Mode::GAME_LOADING:
-            if (isLowPowerEnabled) {
-                break;
-            }
             [[fallthrough]];
         default:
             if (enabled) {
@@ -158,22 +145,19 @@ ndk::ScopedAStatus Power::setBoost(Boost type, int32_t durationMs) {
     }
     switch (type) {
         case Boost::INTERACTION:
-            if (mSustainedPerfModeOn || isLowPowerEnabled) {
+            if (mSustainedPerfModeOn) {
                 break;
             }
             mInteractionHandler->Acquire(durationMs);
             break;
         case Boost::DISPLAY_UPDATE_IMMINENT:
-            if (isLowPowerEnabled) {
-                break;
-            }
             [[fallthrough]];
         case Boost::ML_ACC:
             [[fallthrough]];
         case Boost::AUDIO_LAUNCH:
             [[fallthrough]];
         default:
-            if (mSustainedPerfModeOn || isLowPowerEnabled) {
+            if (mSustainedPerfModeOn) {
                 break;
             }
             if (durationMs > 0) {
