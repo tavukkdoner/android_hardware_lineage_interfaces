@@ -96,13 +96,6 @@ ndk::ScopedAStatus Power::setMode(Mode type, bool enabled) {
             break;
         case Mode::LOW_POWER:
             if (enabled) {
-                HintManager::GetInstance()->EndHint("INTERACTIVE");
-                HintManager::GetInstance()->EndHint("GAME_LOADING");
-                HintManager::GetInstance()->EndHint("INTERACTION");
-                HintManager::GetInstance()->EndHint("DISPLAY_UPDATE_IMMINENT");
-                HintManager::GetInstance()->EndHint("LAUNCH");
-                HintManager::GetInstance()->EndHint("EXPENSIVE_RENDERING");
-                HintManager::GetInstance()->EndHint("AUDIO_STREAMING_LOW_LATENCY");
                 HintManager::GetInstance()->DoHint("LOW_POWER");
             } else {
                 HintManager::GetInstance()->EndHint("LOW_POWER");
