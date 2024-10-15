@@ -21,6 +21,7 @@
 #include <atomic>
 #include <memory>
 #include <thread>
+#include <vector>
 
 #include "AdpfTypes.h"
 #include "InteractionHandler.h"
