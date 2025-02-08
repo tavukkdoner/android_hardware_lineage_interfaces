@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2022-2023 The LineageOS Project
+ * Copyright (C) 2022-2025 The LineageOS Project
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -53,6 +53,9 @@ static const std::vector<std::string> kChargingDeadlineNodes = {
 
 ChargingControl::ChargingControl() : mChargingEnabledNode(nullptr), mChargingDeadlineNode(nullptr) {
 #ifdef HEALTH_CHARGING_CONTROL_SUPPORTS_TOGGLE
+#ifdef HEALTH_CHARGING_CONTROL_CHARGING_PATH
+    mChargingEnabledNode = &kChargingEnabledNodes[0];
+#else
     while (!mChargingEnabledNode) {
         for (const auto& node : kChargingEnabledNodes) {
             for (int retries = 0; retries < OPEN_RETRY_COUNT; retries++) {
@@ -65,6 +68,7 @@ ChargingControl::ChargingControl() : mChargingEnabledNode(nullptr), mChargingDea
             }
         }
     }
+#endif
 #endif
 
 #ifdef HEALTH_CHARGING_CONTROL_SUPPORTS_DEADLINE
@@ -88,7 +92,7 @@ ndk::ScopedAStatus ChargingControl::getChargingEnabled(bool* _aidl_return) {
     std::string content;
     if (!android::base::ReadFileToString(mChargingEnabledNode->path, &content, true)) {
         LOG(ERROR) << "Failed to read current charging enabled value";
-        return ndk::ScopedAStatus::fromExceptionCode(EX_ILLEGAL_STATE);
+        return ndk::ScopedAStatus::fromExceptionCode(EX_UNSUPPORTED_OPERATION);
     }
 
     content = android::base::Trim(content);
@@ -110,7 +114,7 @@ ndk::ScopedAStatus ChargingControl::setChargingEnabled(bool enabled) {
             enabled ? mChargingEnabledNode->value_true : mChargingEnabledNode->value_false;
     if (!android::base::WriteStringToFile(value, mChargingEnabledNode->path, true)) {
         LOG(ERROR) << "Failed to write to charging enable node: " << strerror(errno);
-        return ndk::ScopedAStatus::fromExceptionCode(EX_ILLEGAL_STATE);
+        return ndk::ScopedAStatus::fromExceptionCode(EX_UNSUPPORTED_OPERATION);
     }
 
     return ndk::ScopedAStatus::ok();
